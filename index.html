@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ลอยกระทงสายแมว — กิจกรรมหาเสียง</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-cream: #FFFDF9;
+      --ink: #2D2A32;
+      --muted: #6B6575;
+      --accent: #E06D85;
+      --accent-soft: #FCE7EC;
+      --river-top: #78B7D0;
+      --river-bot: #3A7CA5;
+      --card-border: #E8E0D5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Prompt', sans-serif;
+      background: var(--bg-cream);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .screen {
+      display: none;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 18px 48px;
+    }
+
+    .screen.active { display: block; }
+
+    .card {
+      background: #FFFFFF;
+      border: 1.5px solid var(--card-border);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(45, 42, 50, 0.06);
+    }
+
+    h1, h2, h3 { margin-top: 0; }
+
+    .input-name {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1.5px solid var(--card-border);
+      border-radius: 14px;
+      margin: 12px 0 18px;
+      outline: none;
+    }
+
+    .input-name:focus { border-color: var(--accent); }
+
+    .btn {
+      background: var(--accent);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 22px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .btn:hover { filter: brightness(0.96); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .q-box {
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: #FFFEFC;
+    }
+
+    .q-title { font-weight: 600; margin-bottom: 10px; }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .choice-btn {
+      padding: 10px 8px;
+      border-radius: 12px;
+      border: 1.5px solid var(--card-border);
+      background: #FFFFFF;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .choice-btn.selected {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: #9E2A45;
+      font-weight: 700;
+    }
+
+    .result-img {
+      width: 220px;
+      height: 220px;
+      object-fit: contain;
+      display: block;
+      margin: 12px auto 18px;
+    }
+
+    /* หน้าต่างแม่น้ำและวัดสไตล์ลายเส้นพาสเทล */
+    .river-screen {
+      max-width: 100%;
+      padding: 0;
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .river-top-bar {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      background: rgba(255, 253, 249, 0.88);
+      backdrop-filter: blur(6px);
+      border-bottom: 1.5px solid var(--card-border);
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .river-stage {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - 64px);
+      min-height: 540px;
+      background: linear-gradient(180deg, #FDEBD0 0%, #FCE7EC 38%, var(--river-top) 46%, var(--river-bot) 100%);
+      overflow: hidden;
+    }
+
+    .temple-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 48%;
+      pointer-events: none;
+    }
+
+    .floating-krathong {
+      position: absolute;
+      left: -170px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+      animation-name: floatLeftToRight;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
+    }
+
+    .floating-krathong img {
+      width: 112px;
+      height: 112px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 10px rgba(20, 45, 70, 0.25));
+    }
+
+    .krathong-tag {
+      margin-top: -6px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1.5px solid #2D2A32;
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #2D2A32;
+      white-space: nowrap;
+    }
+
+    @keyframes floatLeftToRight {
+      0% { transform: translateX(0) translateY(0px); }
+      50% { transform: translateX(calc(50vw + 85px)) translateY(-5px); }
+      100% { transform: translateX(calc(100vw + 220px)) translateY(0px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- หน้า 1: กรอกชื่อ -->
+  <section id="screenName" class="screen active">
+    <div class="card">
+      <h1>ลอยกระทงสายแมว</h1>
+      <p style="color: var(--muted);">กรอกชื่อที่อยากให้แสดงบนกระทงของคุณได้เลย (ตั้งชื่ออะไรก็ได้)</p>
+      <form id="nameForm">
+        <input id="playerNameInput" class="input-name" type="text" maxlength="24" placeholder="พิมพ์ชื่อที่อยากให้แสดง..." required />
+        <button class="btn" type="submit">ไปทำแบบสอบถาม 20 ข้อ →</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- หน้า 2: แบบสอบถาม 20 ข้อ -->
+  <section id="screenQuiz" class="screen">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h2 style="margin:0;">แบบสอบถามบุคลิก 20 ข้อ</h2>
+        <span id="progressText" style="color:var(--muted); font-weight:600;">ตอบแล้ว 0 / 20</span>
+      </div>
+      <div id="questionsList"></div>
+      <button id="submitQuizBtn" class="btn" style="width:100%; margin-top:10px;" disabled>ดูผลลัพธ์กระทงแมวของฉัน</button>
+    </div>
+  </section>
+
+  <!-- หน้า 3: ผลลัพธ์แมว -->
+  <section id="screenResult" class="screen">
+    <div class="card" style="text-align:center;">
+      <p id="resultPlayerSub" style="color:var(--muted); margin-bottom:4px;"></p>
+      <h2 id="resultCatTitle" style="font-size:1.6rem;"></h2>
+      <img id="resultCatImg" class="result-img" src="" alt="" />
+      <p id="resultCatDesc" style="color:var(--muted); line-height:1.6; max-width:520px; margin:0 auto 22px;"></p>
+      <button id="goFloatBtn" class="btn">นำไปลอยกระทง</button>
+    </div>
+  </section>
+
+  <!-- หน้า 4: หน้าต่างลอยกระทง -->
+  <section id="screenRiver" class="screen river-screen">
+    <div class="river-top-bar">
+      <div>
+        <strong>แม่น้ำหน้าวัด</strong> • <span id="riverStatusText" style="color:var(--muted); font-size:0.9rem;">กำลังลอยกระทงบนหน้าจอ (สูงสุด 10 ลำ)</span>
+      </div>
+      <button id="restartBtn" class="btn" style="padding:8px 14px; font-size:0.88rem;">เริ่มใหม่</button>
+    </div>
+    <div id="riverStage" class="river-stage">
+      <!-- วัดสไตล์ลายเส้นพาสเทลเข้ากับภาพกระทงแมว -->
+      <svg class="temple-svg" viewBox="0 0 1200 320" preserveAspectRatio="none">
+        <path d="M0,250 Q300,220 600,248 T1200,242 L1200,320 L0,320 Z" fill="#FCE7EC" stroke="#2D2A32" stroke-width="2" />
+        <g fill="#FFFDF9" stroke="#2D2A32" stroke-width="2">
+          <rect x="460" y="135" width="280" height="110" rx="4" />
+          <polygon points="435,135 600,72 765,135" fill="#F9C6D1" />
+          <polygon points="455,105 600,52 745,105" fill="#FCE7EC" />
+          <line x1="600" y1="24" x2="600" y2="52" stroke="#2D2A32" stroke-width="2.5" />
+          <rect x="572" y="175" width="56" height="70" fill="#A8D5BA" />
+        </g>
+        <g fill="#FFFDF9" stroke="#2D2A32" stroke-width="1.8">
+          <rect x="190" y="170" width="90" height="75" rx="3" />
+          <polygon points="175,170 235,130 295,170" fill="#F9C6D1" />
+          <rect x="920" y="170" width="90" height="75" rx="3" />
+          <polygon points="905,170 965,130 1025,170" fill="#F9C6D1" />
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <script>
+    const CATS = {
+      tabby: {
+        name: "แมวสลิดเทา",
+        img: "assets/cat-tabby.png",
+        desc: "นิสัยชิวๆ ตามใจฉัน ตามอารมณ์ตัวเอง"
+      },
+      wichianmat: {
+        name: "แมววิเชียรมาศ",
+        img: "assets/cat-wichianmat.png",
+        desc: "ดูเป็นผู้ดีขี้แกล้ง ชอบเล่นอะไรเล็กๆ แกล้งอะไรหน่อยๆ แต่ก็ยังคงความผู้ดี"
+      },
+      orange: {
+        name: "แมวส้ม",
+        img: "assets/cat-orange.png",
+        desc: "ขี้แกล้ง ขี้เล่น กวนตีน ดื้อ แมวเป้าสุดๆ"
+      },
+      black: {
+        name: "แมวดำ",
+        img: "assets/cat-black.png",
+        desc: "ขี้เซา สบายๆ ชอบนอน น่ารัก"
+      },
+      white: {
+        name: "แมวขาว",
+        img: "assets/cat-white.png",
+        desc: "ผู้ดีแท้ๆ ดูสง่าไปหมด"
+      },
+      seal: {
+        name: "แมวน้ำ",
+        img: "assets/cat-seal.png",
+        desc: "ตัวซีเคร็ท ไม่มีใครเหมือน แปลกและแตกต่าง อ้วน"
+      }
+    };
+
+    // แต่ละตัวเลือกมีคะแนน [แมว +1, แมว -1] รวมครบทั้ง 6 ตัวใน 1 ข้อ (บวก 10 / ลบ 10 เท่ากันทุกตัวใน 20 ข้อ)
+    const QUESTIONS = [
+      { id: 1, q: "1) นอนตื่น 8 โมง", opts: { always: ["white", "seal"], sometimes: ["tabby", "orange"], never: ["black", "wichianmat"] } },
+      { id: 2, q: "2) ชอบไปเล่นกับแมว", opts: { always: ["orange", "white"], sometimes: ["wichianmat", "black"], never: ["seal", "tabby"] } },
+      { id: 3, q: "3) เห็นแมวทีไร ชอบเอามือถือขึ้นมาถ่าย", opts: { always: ["wichianmat", "tabby"], sometimes: ["orange", "black"], never: ["white", "seal"] } },
+      { id: 4, q: "4) เข้าเรียนทุกคาบไม่เคยขาด", opts: { always: ["white", "orange"], sometimes: ["tabby", "wichianmat"], never: ["black", "seal"] } },
+      { id: 5, q: "5) กินข้าวเสร็จคนสุดท้ายของกลุ่มเสมอ", opts: { always: ["black", "wichianmat"], sometimes: ["seal", "white"], never: ["orange", "tabby"] } },
+      { id: 6, q: "6) ได้เกรด 3.5 ขึ้นไป", opts: { always: ["white", "black"], sometimes: ["wichianmat", "orange"], never: ["seal", "tabby"] } },
+      { id: 7, q: "7) ติดของหวาน", opts: { always: ["seal", "white"], sometimes: ["orange", "black"], never: ["tabby", "wichianmat"] } },
+      { id: 8, q: "8) ชอบกินเผ็ด", opts: { always: ["orange", "tabby"], sometimes: ["wichianmat", "seal"], never: ["black", "white"] } },
+      { id: 9, q: "9) รับรางวัลหน้าเสาธง", opts: { always: ["white", "orange"], sometimes: ["wichianmat", "black"], never: ["tabby", "seal"] } },
+      { id: 10, q: "10) ชอบอ้อนแฟน", opts: { always: ["orange", "white"], sometimes: ["black", "wichianmat"], never: ["seal", "tabby"] } },
+      { id: 11, q: "11) ชอบประหยัด", opts: { always: ["black", "seal"], sometimes: ["tabby", "orange"], never: ["wichianmat", "white"] } },
+      { id: 12, q: "12) ส่งงานตรงเวลา", opts: { always: ["wichianmat", "tabby"], sometimes: ["white", "black"], never: ["orange", "seal"] } },
+      { id: 13, q: "13) ชอบหลับในคาบ", opts: { always: ["black", "white"], sometimes: ["tabby", "wichianmat"], never: ["orange", "seal"] } },
+      { id: 14, q: "14) นั่งนิ่งๆ แต่จริงๆ นั่งคิดอะไรไปเรื่อย", opts: { always: ["tabby", "orange"], sometimes: ["seal", "white"], never: ["wichianmat", "black"] } },
+      { id: 15, q: "15) ชอบบิดขี้เกียจ", opts: { always: ["black", "wichianmat"], sometimes: ["tabby", "white"], never: ["orange", "seal"] } },
+      { id: 16, q: "16) นอนดึก", opts: { always: ["tabby", "white"], sometimes: ["orange", "black"], never: ["wichianmat", "seal"] } },
+      { id: 17, q: "17) จีบคนเก่ง", opts: { always: ["orange", "white"], sometimes: ["wichianmat", "seal"], never: ["tabby", "black"] } },
+      { id: 18, q: "18) ชอบกอดแม่", opts: { always: ["black", "tabby"], sometimes: ["wichianmat", "seal"], never: ["white", "orange"] } },
+      { id: 19, q: "19) ชอบดูอนิเมะ", opts: { always: ["seal", "tabby"], sometimes: ["white", "orange"], never: ["black", "wichianmat"] } },
+      { id: 20, q: "20) ติดซีรี่ย์", opts: { always: ["seal", "black"], sometimes: ["tabby", "orange"], never: ["white", "wichianmat"] } }
+    ];
+
+    const SEED_FRIENDS = [
+      { name: "มิ้นต์", cat: "white" },
+      { name: "ปอนด์", cat: "orange" },
+      { name: "น้ำชา", cat: "wichianmat" },
+      { name: "ต้า", cat: "tabby" },
+      { name: "ฟลุ๊ค", cat: "black" },
+      { name: "แบม", cat: "seal" },
+      { name: "เหมย", cat: "white" },
+      { name: "กัส", cat: "orange" },
+      { name: "พาย", cat: "wichianmat" },
+      { name: "ไบร์ท", cat: "tabby" },
+      { name: "ออม", cat: "black" },
+      { name: "เนย", cat: "seal" }
+    ];
+
+    let playerName = "";
+    let answers = {};
+    let chosenCatKey = "tabby";
+    let activeFloatingCount = 0;
+    let spawnTimer = null;
+    let pendingQueue = [];
+    const MAX_ON_SCREEN = 10;
+
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function renderQuestions() {
+      const wrap = document.getElementById("questionsList");
+      wrap.innerHTML = QUESTIONS.map((item) => `
+        <div class="q-box">
+          <div class="q-title">${item.q}</div>
+          <div class="choices">
+            <button type="button" class="choice-btn" data-qid="${item.id}" data-val="always">ประจำ</button>
+            <button type="button" class="choice-btn" data-qid="${item.id}" data-val="sometimes">บางครั้ง</button>
+            <button type="button" class="choice-btn" data-qid="${item.id}" data-val="never">ไม่เคย</button>
+          </div>
+        </div>
+      `).join("");
+
+      wrap.querySelectorAll(".choice-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const qid = Number(btn.dataset.qid);
+          const val = btn.dataset.val;
+          answers[qid] = val;
+          wrap.querySelectorAll(`[data-qid="${qid}"]`).forEach((b) => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          const count = Object.keys(answers).length;
+          document.getElementById("progressText").innerText = `ตอบแล้ว ${count} / 20`;
+          document.getElementById("submitQuizBtn").disabled = count < 20;
+        });
+      });
+    }
+
+    function calculateWinnerCat() {
+      const scores = { tabby: 0, wichianmat: 0, orange: 0, black: 0, white: 0, seal: 0 };
+      QUESTIONS.forEach((item) => {
+        const picked = answers[item.id];
+        const [plusCat, minusCat] = item.opts[picked];
+        scores[plusCat] += 1;
+        scores[minusCat] -= 1;
+      });
+
+      const maxScore = Math.max(...Object.values(scores));
+      const topCats = Object.keys(scores).filter((k) => scores[k] === maxScore);
+      return topCats[Math.floor(Math.random() * topCats.length)];
+    }
+
+    function getPoolKrathongs() {
+      const saved = JSON.parse(localStorage.getItem("krathong_pool_v1") || "[]");
+      return [...saved, ...SEED_FRIENDS];
+    }
+
+    function saveMyKrathongToPool(entry) {
+      const saved = JSON.parse(localStorage.getItem("krathong_pool_v1") || "[]");
+      saved.unshift(entry);
+      localStorage.setItem("krathong_pool_v1", JSON.stringify(saved.slice(0, 40)));
+    }
+
+    function spawnOneKrathong(entry) {
+      const stage = document.getElementById("riverStage");
+      if (!stage || activeFloatingCount >= MAX_ON_SCREEN) return;
+
+      const cat = CATS[entry.cat] || CATS.tabby;
+      const el = document.createElement("div");
+      el.className = "floating-krathong";
+      const topPct = 52 + Math.random() * 34;
+      const durationSec = 11 + Math.random() * 6;
+
+      el.style.top = `${topPct}%`;
+      el.style.animationDuration = `${durationSec}s`;
+      el.innerHTML = `<img src="${cat.img}" alt="${cat.name}" /><span class="krathong-tag">${entry.name}</span>`;
+
+      activeFloatingCount += 1;
+      stage.appendChild(el);
+
+      el.addEventListener("animationend", () => {
+        el.remove();
+        activeFloatingCount = Math.max(0, activeFloatingCount - 1);
+        refillRiver();
+      });
+    }
+
+    function refillRiver() {
+      const pool = getPoolKrathongs();
+      while (activeFloatingCount < MAX_ON_SCREEN && pool.length > 0) {
+        const nextItem = pendingQueue.length > 0
+          ? pendingQueue.shift()
+          : pool[Math.floor(Math.random() * pool.length)];
+        spawnOneKrathong(nextItem);
+      }
+    }
+
+    function startRiverLoop() {
+      clearInterval(spawnTimer);
+      document.querySelectorAll(".floating-krathong").forEach((n) => n.remove());
+      activeFloatingCount = 0;
+
+      const myItem = { name: playerName, cat: chosenCatKey };
+      saveMyKrathongToPool(myItem);
+      pendingQueue = [myItem];
+      refillRiver();
+
+      spawnTimer = setInterval(() => {
+        refillRiver();
+      }, 2200);
+    }
+
+    document.getElementById("nameForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      playerName = document.getElementById("playerNameInput").value.trim() || "ผู้ร่วมลอย";
+      answers = {};
+      renderQuestions();
+      document.getElementById("progressText").innerText = "ตอบแล้ว 0 / 20";
+      document.getElementById("submitQuizBtn").disabled = true;
+      showScreen("screenQuiz");
+    });
+
+    document.getElementById("submitQuizBtn").addEventListener("click", () => {
+      chosenCatKey = calculateWinnerCat();
+      const cat = CATS[chosenCatKey];
+      document.getElementById("resultPlayerSub").innerText = `กระทงของ "${playerName}"`;
+      document.getElementById("resultCatTitle").innerText = `ได้${cat.name}`;
+      document.getElementById("resultCatImg").src = cat.img;
+      document.getElementById("resultCatImg").alt = cat.name;
+      document.getElementById("resultCatDesc").innerText = cat.desc;
+      showScreen("screenResult");
+    });
+
+    document.getElementById("goFloatBtn").addEventListener("click", () => {
+      showScreen("screenRiver");
+      startRiverLoop();
+    });
+
+    document.getElementById("restartBtn").addEventListener("click", () => {
+      clearInterval(spawnTimer);
+      activeFloatingCount = 0;
+      document.getElementById("playerNameInput").value = "";
+      showScreen("screenName");
+    });
+  </script>
+</body>
+</html>
