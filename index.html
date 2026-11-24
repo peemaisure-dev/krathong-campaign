@@ -162,8 +162,8 @@
     }
 
     .floating-krathong img {
-      width: 112px;
-      height: 112px;
+      width: clamp(82px, 11vw, 114px);
+      height: clamp(82px, 11vw, 114px);
       object-fit: contain;
       filter: drop-shadow(0 8px 12px rgba(8, 15, 30, 0.55));
     }
@@ -183,7 +183,7 @@
 
     @keyframes floatLeftToRight {
       0% { transform: translateX(0) translateY(0px); }
-      50% { transform: translateX(calc(50vw + 85px)) translateY(-5px); }
+      50% { transform: translateX(calc(50vw + 85px)) translateY(-4px); }
       100% { transform: translateX(calc(100vw + 220px)) translateY(0px); }
     }
   </style>
@@ -257,7 +257,7 @@
       messagingSenderId: "629027534766",
       appId: "1:629027534766:web:9f71b3e32ebd5dc9bc7a3f",
       measurementId: "G-GMXRQEKZ8F"
-    }; //[cite: 24]
+    };[cite: 24]
 
     const app = initializeApp(FIREBASE_CONFIG);
     const db = getFirestore(app);
@@ -329,7 +329,26 @@
     let activeIds = new Set();
     let laneIndex = 0;
     const MAX_ON_SCREEN = 10;
-    const LANES_TOP_PCT = [58, 66, 74, 82, 88];
+
+    function getRiverLanes() {
+      const stage = document.getElementById("riverStage");
+      const h = stage ? stage.clientHeight : 600;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      if (isPortrait) {
+        return [
+          Math.round(h * 0.64),
+          Math.round(h * 0.70),
+          Math.round(h * 0.76),
+          Math.round(h * 0.82)
+        ];
+      }
+      return [
+        Math.round(h * 0.62),
+        Math.round(h * 0.69),
+        Math.round(h * 0.76),
+        Math.round(h * 0.83)
+      ];
+    }
 
     function showScreen(id) {
       document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
@@ -382,13 +401,15 @@
       if (!stage || !entry || activeIds.has(entry.id) || activeIds.size >= MAX_ON_SCREEN) return;
 
       const cat = CATS[entry.cat] || CATS.tabby;
+      const lanes = getRiverLanes();
+      const topPx = lanes[laneIndex % lanes.length];
+      laneIndex += 1;
+
       const el = document.createElement("div");
       el.className = "floating-krathong";
-      const topPct = LANES_TOP_PCT[laneIndex % LANES_TOP_PCT.length];
-      laneIndex += 1;
       const durationSec = 14 + Math.random() * 4;
 
-      el.style.top = `${topPct}%`;
+      el.style.top = `${topPx}px`;
       el.style.animationDuration = `${durationSec}s`;
       el.innerHTML = `<img src="${cat.img}" alt="${cat.name}" /><span class="krathong-tag">${entry.name}</span>`;
 
