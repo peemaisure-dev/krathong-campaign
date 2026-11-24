@@ -115,7 +115,6 @@
       margin: 12px auto 18px;
     }
 
-    /* หน้าต่างแม่น้ำและวัดสไตล์ลายเส้นพาสเทล */
     .river-screen {
       max-width: 100%;
       padding: 0;
@@ -235,12 +234,11 @@
   <section id="screenRiver" class="screen river-screen">
     <div class="river-top-bar">
       <div>
-        <strong>แม่น้ำหน้าวัด</strong> • <span id="riverStatusText" style="color:var(--muted); font-size:0.9rem;">กำลังลอยกระทงบนหน้าจอ (สูงสุด 10 ลำ)</span>
+        <strong>แม่น้ำหน้าวัด</strong> • <span id="riverStatusText" style="color:var(--muted); font-size:0.9rem;">กำลังแสดงกระทงของผู้ร่วมลอยจริง (สูงสุด 10 ลำ)</span>
       </div>
       <button id="restartBtn" class="btn" style="padding:8px 14px; font-size:0.88rem;">เริ่มใหม่</button>
     </div>
     <div id="riverStage" class="river-stage">
-      <!-- วัดสไตล์ลายเส้นพาสเทลเข้ากับภาพกระทงแมว -->
       <svg class="temple-svg" viewBox="0 0 1200 320" preserveAspectRatio="none">
         <path d="M0,250 Q300,220 600,248 T1200,242 L1200,320 L0,320 Z" fill="#FCE7EC" stroke="#2D2A32" stroke-width="2" />
         <g fill="#FFFDF9" stroke="#2D2A32" stroke-width="2">
@@ -261,7 +259,7 @@
   </section>
 
   <script>
-   const CATS = {
+    const CATS = {
       tabby: {
         name: "แมวสลิดเทา",
         img: "assets/cat-tabby.jpg",
@@ -293,7 +291,7 @@
         desc: "ตัวซีเคร็ท ไม่มีใครเหมือน แปลกและแตกต่าง อ้วน"
       }
     };
-    // แต่ละตัวเลือกมีคะแนน [แมว +1, แมว -1] รวมครบทั้ง 6 ตัวใน 1 ข้อ (บวก 10 / ลบ 10 เท่ากันทุกตัวใน 20 ข้อ)
+
     const QUESTIONS = [
       { id: 1, q: "1) นอนตื่น 8 โมง", opts: { always: ["white", "seal"], sometimes: ["tabby", "orange"], never: ["black", "wichianmat"] } },
       { id: 2, q: "2) ชอบไปเล่นกับแมว", opts: { always: ["orange", "white"], sometimes: ["wichianmat", "black"], never: ["seal", "tabby"] } },
@@ -317,28 +315,15 @@
       { id: 20, q: "20) ติดซีรี่ย์", opts: { always: ["seal", "black"], sometimes: ["tabby", "orange"], never: ["white", "wichianmat"] } }
     ];
 
-    const SEED_FRIENDS = [
-      { name: "มิ้นต์", cat: "white" },
-      { name: "ปอนด์", cat: "orange" },
-      { name: "น้ำชา", cat: "wichianmat" },
-      { name: "ต้า", cat: "tabby" },
-      { name: "ฟลุ๊ค", cat: "black" },
-      { name: "แบม", cat: "seal" },
-      { name: "เหมย", cat: "white" },
-      { name: "กัส", cat: "orange" },
-      { name: "พาย", cat: "wichianmat" },
-      { name: "ไบร์ท", cat: "tabby" },
-      { name: "ออม", cat: "black" },
-      { name: "เนย", cat: "seal" }
-    ];
-
     let playerName = "";
     let answers = {};
     let chosenCatKey = "tabby";
     let activeFloatingCount = 0;
     let spawnTimer = null;
     let pendingQueue = [];
+    let laneIndex = 0;
     const MAX_ON_SCREEN = 10;
+    const LANES_TOP_PCT = [54, 62, 70, 78, 86];
 
     function showScreen(id) {
       document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
@@ -386,15 +371,14 @@
       return topCats[Math.floor(Math.random() * topCats.length)];
     }
 
-    function getPoolKrathongs() {
-      const saved = JSON.parse(localStorage.getItem("krathong_pool_v1") || "[]");
-      return [...saved, ...SEED_FRIENDS];
+    function getRealKrathongs() {
+      return JSON.parse(localStorage.getItem("krathong_real_pool_v1") || "[]");
     }
 
     function saveMyKrathongToPool(entry) {
-      const saved = JSON.parse(localStorage.getItem("krathong_pool_v1") || "[]");
+      const saved = getRealKrathongs();
       saved.unshift(entry);
-      localStorage.setItem("krathong_pool_v1", JSON.stringify(saved.slice(0, 40)));
+      localStorage.setItem("krathong_real_pool_v1", JSON.stringify(saved.slice(0, 60)));
     }
 
     function spawnOneKrathong(entry) {
@@ -404,8 +388,9 @@
       const cat = CATS[entry.cat] || CATS.tabby;
       const el = document.createElement("div");
       el.className = "floating-krathong";
-      const topPct = 52 + Math.random() * 34;
-      const durationSec = 11 + Math.random() * 6;
+      const topPct = LANES_TOP_PCT[laneIndex % LANES_TOP_PCT.length];
+      laneIndex += 1;
+      const durationSec = 13 + Math.random() * 4;
 
       el.style.top = `${topPct}%`;
       el.style.animationDuration = `${durationSec}s`;
@@ -422,8 +407,10 @@
     }
 
     function refillRiver() {
-      const pool = getPoolKrathongs();
-      while (activeFloatingCount < MAX_ON_SCREEN && pool.length > 0) {
+      const pool = getRealKrathongs();
+      if (!pool.length) return;
+      const cap = Math.min(MAX_ON_SCREEN, pool.length);
+      while (activeFloatingCount < cap) {
         const nextItem = pendingQueue.length > 0
           ? pendingQueue.shift()
           : pool[Math.floor(Math.random() * pool.length)];
@@ -435,6 +422,7 @@
       clearInterval(spawnTimer);
       document.querySelectorAll(".floating-krathong").forEach((n) => n.remove());
       activeFloatingCount = 0;
+      laneIndex = 0;
 
       const myItem = { name: playerName, cat: chosenCatKey };
       saveMyKrathongToPool(myItem);
@@ -443,7 +431,7 @@
 
       spawnTimer = setInterval(() => {
         refillRiver();
-      }, 2200);
+      }, 2800);
     }
 
     document.getElementById("nameForm").addEventListener("submit", (e) => {
