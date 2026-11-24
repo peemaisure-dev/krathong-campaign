@@ -229,14 +229,40 @@
   <section id="screenRiver" class="screen river-screen">
     <div class="river-top-bar">
       <div>
-        <strong>แม่น้ำหน้าวัด</strong> • <span id="riverStatusText" style="color:var(--muted); font-size:0.9rem;">กำลังแสดงกระทงของผู้ร่วมลอยจริง (สูงสุด 10 ลำ)</span>
+        <strong>แม่น้ำหน้าวัด</strong> • <span id="riverStatusText" style="color:var(--muted); font-size:0.9rem;">เชื่อมต่อฐานข้อมูลสด • แสดงสูงสุด 10 ลำ</span>
       </div>
       <button id="restartBtn" class="btn" style="padding:8px 14px; font-size:0.88rem;">เริ่มใหม่</button>
     </div>
     <div id="riverStage" class="river-stage"></div>
   </section>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      orderBy,
+      limit,
+      onSnapshot,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyAPaoaKdXFTWZkDqVWGtX5q6S2tAshND1U",
+      authDomain: "krathong-cat-live.firebaseapp.com",
+      projectId: "krathong-cat-live",
+      storageBucket: "krathong-cat-live.firebasestorage.app",
+      messagingSenderId: "629027534766",
+      appId: "1:629027534766:web:9f71b3e32ebd5dc9bc7a3f",
+      measurementId: "G-GMXRQEKZ8F"
+    }; //[cite: 24]
+
+    const app = initializeApp(FIREBASE_CONFIG);
+    const db = getFirestore(app);
+    const krathongsCol = collection(db, "krathongs");
+
     const CATS = {
       tabby: {
         name: "แมวสลิดเทา",
@@ -296,6 +322,8 @@
     let playerName = "";
     let answers = {};
     let chosenCatKey = "tabby";
+    let livePool = [];
+    let unsubscribeLive = null;
     let spawnTimer = null;
     let pendingQueue = [];
     let activeIds = new Set();
@@ -349,28 +377,6 @@
       return topCats[Math.floor(Math.random() * topCats.length)];
     }
 
-    function getRealKrathongs() {
-      const raw = JSON.parse(localStorage.getItem("krathong_real_pool_v1") || "[]");
-      let upgraded = false;
-      const list = raw.map((item, idx) => {
-        if (!item.id) {
-          upgraded = true;
-          return { ...item, id: `legacy_${idx}_${item.name}_${item.cat}` };
-        }
-        return item;
-      });
-      if (upgraded) {
-        localStorage.setItem("krathong_real_pool_v1", JSON.stringify(list));
-      }
-      return list;
-    }
-
-    function saveMyKrathongToPool(entry) {
-      const saved = getRealKrathongs();
-      saved.unshift(entry);
-      localStorage.setItem("krathong_real_pool_v1", JSON.stringify(saved.slice(0, 80)));
-    }
-
     function spawnOneKrathong(entry) {
       const stage = document.getElementById("riverStage");
       if (!stage || !entry || activeIds.has(entry.id) || activeIds.size >= MAX_ON_SCREEN) return;
@@ -396,9 +402,8 @@
     }
 
     function spawnNextAvailable() {
-      const pool = getRealKrathongs();
-      if (!pool.length) return;
-      const cap = Math.min(MAX_ON_SCREEN, pool.length);
+      if (!livePool.length) return;
+      const cap = Math.min(MAX_ON_SCREEN, livePool.length);
       if (activeIds.size >= cap) return;
 
       while (pendingQueue.length > 0) {
@@ -409,27 +414,62 @@
         }
       }
 
-      const available = pool.filter((item) => !activeIds.has(item.id));
+      const available = livePool.filter((item) => !activeIds.has(item.id));
       if (!available.length) return;
       const picked = available[Math.floor(Math.random() * available.length)];
       spawnOneKrathong(picked);
     }
 
-    function startRiverLoop() {
+    function subscribeKrathongsLive(myDocId) {
+      if (unsubscribeLive) unsubscribeLive();
+      const q = query(krathongsCol, orderBy("createdAt", "desc"), limit(100));
+
+      unsubscribeLive = onSnapshot(q, (snapshot) => {
+        livePool = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          name: docSnap.data().name || "ผู้ร่วมลอย",
+          cat: docSnap.data().cat || "tabby"
+        }));
+
+        document.getElementById("riverStatusText").innerText =
+          `ผู้ร่วมลอยในระบบ ${livePool.length} ลำ • แสดงสูงสุด ${MAX_ON_SCREEN} ลำ`;
+
+        if (myDocId && !activeIds.has(myDocId)) {
+          const mine = livePool.find((item) => item.id === myDocId);
+          if (mine && !pendingQueue.some((p) => p.id === mine.id)) {
+            pendingQueue.unshift(mine);
+          }
+        }
+
+        spawnNextAvailable();
+      });
+    }
+
+    async function startRiverLoop() {
       clearInterval(spawnTimer);
       document.querySelectorAll(".floating-krathong").forEach((n) => n.remove());
       activeIds.clear();
+      pendingQueue = [];
       laneIndex = 0;
 
-      const myItem = {
-        id: `kr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        name: playerName,
-        cat: chosenCatKey
-      };
-      saveMyKrathongToPool(myItem);
-      pendingQueue = [myItem];
-      spawnNextAvailable();
+      const btn = document.getElementById("goFloatBtn");
+      btn.disabled = true;
 
+      let myDocId = null;
+      try {
+        const docRef = await addDoc(krathongsCol, {
+          name: playerName,
+          cat: chosenCatKey,
+          createdAt: serverTimestamp()
+        });
+        myDocId = docRef.id;
+      } catch (err) {
+        console.error("บันทึกลง Firestore ไม่สำเร็จ:", err);
+      } finally {
+        btn.disabled = false;
+      }
+
+      subscribeKrathongsLive(myDocId);
       spawnTimer = setInterval(() => {
         spawnNextAvailable();
       }, 2200);
@@ -456,13 +496,14 @@
       showScreen("screenResult");
     });
 
-    document.getElementById("goFloatBtn").addEventListener("click", () => {
+    document.getElementById("goFloatBtn").addEventListener("click", async () => {
       showScreen("screenRiver");
-      startRiverLoop();
+      await startRiverLoop();
     });
 
     document.getElementById("restartBtn").addEventListener("click", () => {
       clearInterval(spawnTimer);
+      if (unsubscribeLive) unsubscribeLive();
       activeIds.clear();
       document.getElementById("playerNameInput").value = "";
       showScreen("screenName");
