@@ -318,12 +318,12 @@
     let playerName = "";
     let answers = {};
     let chosenCatKey = "tabby";
-    let activeFloatingCount = 0;
     let spawnTimer = null;
     let pendingQueue = [];
+    let activeIds = new Set();
     let laneIndex = 0;
     const MAX_ON_SCREEN = 10;
-    const LANES_TOP_PCT = [54, 62, 70, 78, 86];
+    const LANES_TOP_PCT = [53, 61, 69, 77, 85];
 
     function showScreen(id) {
       document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
@@ -372,66 +372,89 @@
     }
 
     function getRealKrathongs() {
-      return JSON.parse(localStorage.getItem("krathong_real_pool_v1") || "[]");
+      const raw = JSON.parse(localStorage.getItem("krathong_real_pool_v1") || "[]");
+      let upgraded = false;
+      const list = raw.map((item, idx) => {
+        if (!item.id) {
+          upgraded = true;
+          return { ...item, id: `legacy_${idx}_${item.name}_${item.cat}` };
+        }
+        return item;
+      });
+      if (upgraded) {
+        localStorage.setItem("krathong_real_pool_v1", JSON.stringify(list));
+      }
+      return list;
     }
 
     function saveMyKrathongToPool(entry) {
       const saved = getRealKrathongs();
       saved.unshift(entry);
-      localStorage.setItem("krathong_real_pool_v1", JSON.stringify(saved.slice(0, 60)));
+      localStorage.setItem("krathong_real_pool_v1", JSON.stringify(saved.slice(0, 80)));
     }
 
     function spawnOneKrathong(entry) {
       const stage = document.getElementById("riverStage");
-      if (!stage || activeFloatingCount >= MAX_ON_SCREEN) return;
+      if (!stage || !entry || activeIds.has(entry.id) || activeIds.size >= MAX_ON_SCREEN) return;
 
       const cat = CATS[entry.cat] || CATS.tabby;
       const el = document.createElement("div");
       el.className = "floating-krathong";
       const topPct = LANES_TOP_PCT[laneIndex % LANES_TOP_PCT.length];
       laneIndex += 1;
-      const durationSec = 13 + Math.random() * 4;
+      const durationSec = 14 + Math.random() * 4;
 
       el.style.top = `${topPct}%`;
       el.style.animationDuration = `${durationSec}s`;
       el.innerHTML = `<img src="${cat.img}" alt="${cat.name}" /><span class="krathong-tag">${entry.name}</span>`;
 
-      activeFloatingCount += 1;
+      activeIds.add(entry.id);
       stage.appendChild(el);
 
       el.addEventListener("animationend", () => {
         el.remove();
-        activeFloatingCount = Math.max(0, activeFloatingCount - 1);
-        refillRiver();
+        activeIds.delete(entry.id);
       });
     }
 
-    function refillRiver() {
+    function spawnNextAvailable() {
       const pool = getRealKrathongs();
       if (!pool.length) return;
       const cap = Math.min(MAX_ON_SCREEN, pool.length);
-      while (activeFloatingCount < cap) {
-        const nextItem = pendingQueue.length > 0
-          ? pendingQueue.shift()
-          : pool[Math.floor(Math.random() * pool.length)];
-        spawnOneKrathong(nextItem);
+      if (activeIds.size >= cap) return;
+
+      while (pendingQueue.length > 0) {
+        const queued = pendingQueue.shift();
+        if (queued && !activeIds.has(queued.id)) {
+          spawnOneKrathong(queued);
+          return;
+        }
       }
+
+      const available = pool.filter((item) => !activeIds.has(item.id));
+      if (!available.length) return;
+      const picked = available[Math.floor(Math.random() * available.length)];
+      spawnOneKrathong(picked);
     }
 
     function startRiverLoop() {
       clearInterval(spawnTimer);
       document.querySelectorAll(".floating-krathong").forEach((n) => n.remove());
-      activeFloatingCount = 0;
+      activeIds.clear();
       laneIndex = 0;
 
-      const myItem = { name: playerName, cat: chosenCatKey };
+      const myItem = {
+        id: `kr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        name: playerName,
+        cat: chosenCatKey
+      };
       saveMyKrathongToPool(myItem);
       pendingQueue = [myItem];
-      refillRiver();
+      spawnNextAvailable();
 
       spawnTimer = setInterval(() => {
-        refillRiver();
-      }, 2800);
+        spawnNextAvailable();
+      }, 2200);
     }
 
     document.getElementById("nameForm").addEventListener("submit", (e) => {
@@ -462,7 +485,7 @@
 
     document.getElementById("restartBtn").addEventListener("click", () => {
       clearInterval(spawnTimer);
-      activeFloatingCount = 0;
+      activeIds.clear();
       document.getElementById("playerNameInput").value = "";
       showScreen("screenName");
     });
