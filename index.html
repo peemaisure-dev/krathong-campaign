@@ -12,8 +12,6 @@
       --muted: #6B6575;
       --accent: #E06D85;
       --accent-soft: #FCE7EC;
-      --river-top: #78B7D0;
-      --river-bot: #3A7CA5;
       --card-border: #E8E0D5;
     }
 
@@ -130,7 +128,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 12px 18px;
-      background: rgba(255, 253, 249, 0.88);
+      background: rgba(255, 253, 249, 0.92);
       backdrop-filter: blur(6px);
       border-bottom: 1.5px solid var(--card-border);
       gap: 10px;
@@ -142,16 +140,22 @@
       width: 100%;
       height: calc(100vh - 64px);
       min-height: 540px;
-      background-image: url('assets/background-temple-night.png');
-      background-size: cover;
-      background-position: center bottom;
-      background-repeat: no-repeat;
+      background: linear-gradient(180deg, #1B2244 0%, #2E3463 45%, #1E3A5F 48%, #142847 100%);
       overflow: hidden;
+    }
+
+    .night-scene-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
     }
 
     .floating-krathong {
       position: absolute;
       left: -170px;
+      z-index: 10;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -165,12 +169,12 @@
       width: 112px;
       height: 112px;
       object-fit: contain;
-      filter: drop-shadow(0 8px 10px rgba(20, 45, 70, 0.25));
+      filter: drop-shadow(0 8px 12px rgba(8, 15, 30, 0.55));
     }
 
     .krathong-tag {
       margin-top: -6px;
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(255, 253, 249, 0.95);
       border: 1.5px solid #2D2A32;
       border-radius: 999px;
       padding: 2px 10px;
@@ -178,7 +182,7 @@
       font-weight: 600;
       color: #2D2A32;
       white-space: nowrap;
-      filter: drop-shadow(0 0 2px #FFFFFF);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
     }
 
     @keyframes floatLeftToRight {
@@ -233,7 +237,92 @@
       </div>
       <button id="restartBtn" class="btn" style="padding:8px 14px; font-size:0.88rem;">เริ่มใหม่</button>
     </div>
-    <div id="riverStage" class="river-stage"></div>
+    <div id="riverStage" class="river-stage">
+      <svg class="night-scene-svg" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="buddhaAura" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#FFE699" stop-opacity="0.55" />
+            <stop offset="60%" stop-color="#F7C566" stop-opacity="0.16" />
+            <stop offset="100%" stop-color="#2E3463" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="waterNightGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#23436E" />
+            <stop offset="50%" stop-color="#1A3254" />
+            <stop offset="100%" stop-color="#10213A" />
+          </linearGradient>
+        </defs>
+
+        <!-- ดวงดาวและก้อนเมฆยามค่ำคืน -->
+        <g fill="#FFF5CC" opacity="0.85">
+          <circle cx="140" cy="85" r="2.2" />
+          <circle cx="290" cy="130" r="1.8" />
+          <circle cx="430" cy="70" r="2.5" />
+          <circle cx="980" cy="90" r="2.2" />
+          <circle cx="1160" cy="65" r="2.8" />
+          <circle cx="1310" cy="125" r="2" />
+        </g>
+
+        <path d="M120,175 Q150,145 195,155 Q230,130 275,152 Q315,155 320,185 Z" fill="#465084" stroke="#181C34" stroke-width="2" />
+        <path d="M1040,145 Q1075,112 1125,124 Q1170,96 1225,120 Q1270,122 1278,155 Z" fill="#465084" stroke="#181C34" stroke-width="2" />
+
+        <!-- แนวต้นไม้ริมฝั่ง -->
+        <path d="M0,375 Q90,340 190,368 Q290,335 400,368 Q510,345 620,370 Q760,340 900,370 Q1050,338 1200,365 Q1330,345 1440,368 L1440,425 L0,425 Z" fill="#233C4B" stroke="#14222B" stroke-width="2.2" />
+
+        <!-- เรือนไทยและศาลาข้างเคียง -->
+        <g stroke="#1C2033" stroke-width="2.2" stroke-linejoin="round">
+          <rect x="210" y="348" width="130" height="54" rx="4" fill="#E8CFC4" />
+          <polygon points="194,348 275,305 356,348" fill="#C97A8A" />
+          <rect x="258" y="366" width="28" height="36" fill="#F6C87B" opacity="0.85" />
+
+          <rect x="1080" y="352" width="145" height="52" rx="4" fill="#D5DFEB" />
+          <polygon points="1064,352 1152,310 1240,352" fill="#B87688" />
+          <rect x="1115" y="368" width="24" height="24" rx="2" fill="#F6C87B" opacity="0.85" />
+          <rect x="1158" y="368" width="24" height="24" rx="2" fill="#F6C87B" opacity="0.85" />
+        </g>
+
+        <!-- แสงนวลรอบพระพุทธรูปและองค์พระสงบตามพุทธศิลป์ -->
+        <circle cx="720" cy="295" r="190" fill="url(#buddhaAura)" />
+        <g stroke="#2C261E" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+          <!-- ฐานบัว -->
+          <path d="M585,405 Q720,392 855,405 L842,424 Q720,414 598,424 Z" fill="#E5BA63" />
+          <!-- ลำองค์และพระชงฆ์ -->
+          <path d="M645,398 C642,350 658,315 684,295 L756,295 C782,315 798,350 795,398 Z" fill="#F3CA6B" />
+          <path d="M612,396 C622,365 668,364 720,378 C772,364 818,365 828,396 C805,406 755,404 720,394 C685,404 635,406 612,396 Z" fill="#F7D37B" />
+          <!-- พระกรวางสงบบนตัก -->
+          <path d="M668,342 C662,364 684,376 720,376 C756,376 778,364 772,342" fill="none" stroke="#2C261E" stroke-width="2.2" />
+          <!-- พระศอและพระเศียร -->
+          <rect x="706" y="274" width="28" height="24" rx="6" fill="#F3CA6B" />
+          <path d="M694,252 C694,228 706,216 720,216 C734,216 746,228 746,252 C746,270 735,280 720,280 C705,280 694,270 694,252 Z" fill="#F7D37B" />
+          <!-- พระเกตุมาลา -->
+          <path d="M711,217 L720,176 L729,217 Z" fill="#F7D37B" />
+          <!-- พระพักตร์สงบสำรวม -->
+          <path d="M703,245 Q709,241 715,244" fill="none" stroke="#2C261E" stroke-width="1.9" />
+          <path d="M725,244 Q731,241 737,245" fill="none" stroke="#2C261E" stroke-width="1.9" />
+          <path d="M720,247 L719,257 L722,258" fill="none" stroke="#2C261E" stroke-width="1.7" />
+          <path d="M714,265 Q720,268 726,265" fill="none" stroke="#2C261E" stroke-width="1.8" />
+        </g>
+
+        <!-- เขื่อนริมน้ำ -->
+        <rect x="0" y="408" width="1440" height="24" fill="#6D6A78" stroke="#1D2030" stroke-width="2" />
+        <line x1="0" y1="420" x2="1440" y2="420" stroke="#9A96A8" stroke-width="1.4" stroke-dasharray="14 10" />
+
+        <!-- ผืนแม่น้ำและระลอกคลื่น -->
+        <rect x="0" y="432" width="1440" height="388" fill="url(#waterNightGrad)" />
+        <!-- แสงสะท้อนบนผิวน้ำ -->
+        <ellipse cx="720" cy="462" rx="58" ry="11" fill="#F7D37B" opacity="0.26" />
+        <ellipse cx="720" cy="492" rx="42" ry="8" fill="#F7D37B" opacity="0.18" />
+
+        <g fill="none" stroke="#5A8AC2" stroke-width="2" stroke-linecap="round" opacity="0.65">
+          <path d="M120,475 Q175,468 230,475" />
+          <path d="M410,515 Q480,506 550,515" />
+          <path d="M920,485 Q990,476 1060,485" />
+          <path d="M1180,535 Q1255,526 1330,535" />
+          <path d="M240,615 Q325,604 410,615" />
+          <path d="M780,645 Q865,634 950,645" />
+          <path d="M1060,715 Q1150,704 1240,715" />
+        </g>
+      </svg>
+    </div>
   </section>
 
   <script>
