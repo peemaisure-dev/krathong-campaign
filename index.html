@@ -142,17 +142,11 @@
       width: 100%;
       height: calc(100vh - 64px);
       min-height: 540px;
-      background: linear-gradient(180deg, #FDEBD0 0%, #FCE7EC 38%, var(--river-top) 46%, var(--river-bot) 100%);
+      background-image: url('assets/background-temple-night.png');
+      background-size: cover;
+      background-position: center bottom;
+      background-repeat: no-repeat;
       overflow: hidden;
-    }
-
-    .temple-svg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 48%;
-      pointer-events: none;
     }
 
     .floating-krathong {
@@ -184,6 +178,7 @@
       font-weight: 600;
       color: #2D2A32;
       white-space: nowrap;
+      filter: drop-shadow(0 0 2px #FFFFFF);
     }
 
     @keyframes floatLeftToRight {
@@ -238,24 +233,7 @@
       </div>
       <button id="restartBtn" class="btn" style="padding:8px 14px; font-size:0.88rem;">เริ่มใหม่</button>
     </div>
-    <div id="riverStage" class="river-stage">
-      <svg class="temple-svg" viewBox="0 0 1200 320" preserveAspectRatio="none">
-        <path d="M0,250 Q300,220 600,248 T1200,242 L1200,320 L0,320 Z" fill="#FCE7EC" stroke="#2D2A32" stroke-width="2" />
-        <g fill="#FFFDF9" stroke="#2D2A32" stroke-width="2">
-          <rect x="460" y="135" width="280" height="110" rx="4" />
-          <polygon points="435,135 600,72 765,135" fill="#F9C6D1" />
-          <polygon points="455,105 600,52 745,105" fill="#FCE7EC" />
-          <line x1="600" y1="24" x2="600" y2="52" stroke="#2D2A32" stroke-width="2.5" />
-          <rect x="572" y="175" width="56" height="70" fill="#A8D5BA" />
-        </g>
-        <g fill="#FFFDF9" stroke="#2D2A32" stroke-width="1.8">
-          <rect x="190" y="170" width="90" height="75" rx="3" />
-          <polygon points="175,170 235,130 295,170" fill="#F9C6D1" />
-          <rect x="920" y="170" width="90" height="75" rx="3" />
-          <polygon points="905,170 965,130 1025,170" fill="#F9C6D1" />
-        </g>
-      </svg>
-    </div>
+    <div id="riverStage" class="river-stage"></div>
   </section>
 
   <script>
@@ -323,7 +301,7 @@
     let activeIds = new Set();
     let laneIndex = 0;
     const MAX_ON_SCREEN = 10;
-    const LANES_TOP_PCT = [53, 61, 69, 77, 85];
+    const LANES_TOP_PCT = [58, 66, 74, 82, 88];
 
     function showScreen(id) {
       document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
