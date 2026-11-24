@@ -261,39 +261,38 @@
   </section>
 
   <script>
-    const CATS = {
+   const CATS = {
       tabby: {
         name: "แมวสลิดเทา",
-        img: "assets/cat-tabby.png",
+        img: "assets/cat-tabby.jpg",
         desc: "นิสัยชิวๆ ตามใจฉัน ตามอารมณ์ตัวเอง"
       },
       wichianmat: {
         name: "แมววิเชียรมาศ",
-        img: "assets/cat-wichianmat.png",
+        img: "assets/cat-wichianmat.jpg",
         desc: "ดูเป็นผู้ดีขี้แกล้ง ชอบเล่นอะไรเล็กๆ แกล้งอะไรหน่อยๆ แต่ก็ยังคงความผู้ดี"
       },
       orange: {
         name: "แมวส้ม",
-        img: "assets/cat-orange.png",
+        img: "assets/cat-orange.jpg",
         desc: "ขี้แกล้ง ขี้เล่น กวนตีน ดื้อ แมวเป้าสุดๆ"
       },
       black: {
         name: "แมวดำ",
-        img: "assets/cat-black.png",
+        img: "assets/cat-black.jpg",
         desc: "ขี้เซา สบายๆ ชอบนอน น่ารัก"
       },
       white: {
         name: "แมวขาว",
-        img: "assets/cat-white.png",
+        img: "assets/cat-white.jpg",
         desc: "ผู้ดีแท้ๆ ดูสง่าไปหมด"
       },
       seal: {
         name: "แมวน้ำ",
-        img: "assets/cat-seal.png",
+        img: "assets/cat-seal.jpg",
         desc: "ตัวซีเคร็ท ไม่มีใครเหมือน แปลกและแตกต่าง อ้วน"
       }
     };
-
     // แต่ละตัวเลือกมีคะแนน [แมว +1, แมว -1] รวมครบทั้ง 6 ตัวใน 1 ข้อ (บวก 10 / ลบ 10 เท่ากันทุกตัวใน 20 ข้อ)
     const QUESTIONS = [
       { id: 1, q: "1) นอนตื่น 8 โมง", opts: { always: ["white", "seal"], sometimes: ["tabby", "orange"], never: ["black", "wichianmat"] } },
